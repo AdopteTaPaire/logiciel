@@ -2,13 +2,13 @@
   "name": "atp_electron",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/main.js",
+  "main": "dist/electron.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "npm run build && electron ./dist/electron.js",
-    "dev": "electron ./dist/electron.js"
+    "start": "npm run build && electron .",
+    "dev": "electron ."
   },
   "keywords": [],
   "author": "",
