@@ -18,9 +18,8 @@ export default class Main {
 	static ipcInitied: boolean;
 
 	private static onWindowAllClosed() {
-		if (process.platform !== "darwin") {
-			Main.application.quit();
-		}
+		// just hide the window, do not quit the app.
+		if (process.platform == "darwin") Main.application.dock.hide();
 	}
 
 	private static onClose() {
