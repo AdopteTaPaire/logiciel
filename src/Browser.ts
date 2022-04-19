@@ -21,7 +21,7 @@ export default class Browser {
 				`${await Browser.getChromePath()}\\Default\\Extensions`
 			)) {
 				extensions.push(
-					`${await Browser.getChromePath()}\\Default\\Extensions\\${extension}`
+					`--load-extension=${await Browser.getChromePath()}\\Default\\Extensions\\${extension}`
 				);
 			}
 
@@ -30,9 +30,10 @@ export default class Browser {
 				defaultViewport: null,
 				executablePath:
 					"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+				ignoreDefaultArgs: ["--disable-extensions"],
 				args: [
 					`--user-data-dir=${await Browser.getChromePath()}`,
-					...extensions,
+					// ...extensions,
 				],
 			});
 		} catch (e) {
@@ -42,16 +43,6 @@ export default class Browser {
 			);
 		}
 
-		Browser.page = await Browser.browser.newPage();
-
-		await Browser.page.goto("https://lichess.org/login");
-		await Browser.page.click("#form3-username");
-		await Browser.page.keyboard.type("Salut mon pote");
-		// const window = new BrowserWindow();
-		// const url = "https://example.com/";
-		// await window.loadURL(url);
-
-		// const page = await pie.getPage(browser, window);
-		// console.log(page.url());
+		Browser.page = (await Browser.browser.pages())[0]; // page opened by puppeteer automaticaly
 	}
 }
