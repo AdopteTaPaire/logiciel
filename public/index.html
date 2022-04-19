@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Adopte ta paire</title>
+    
+    <!-- Fonts -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; font-src 'self' https://fonts.gstatic.com/ https://ka-f.fontawesome.com/; style-src 'self' https://fonts.googleapis.com/ 'unsafe-inline'; connect-src 'self' https://kit.fontawesome.com/ https://ka-f.fontawesome.com/; script-src 'self' https://kit.fontawesome.com/;">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@500&display=swap" rel="stylesheet" crossorigin>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Icons -->
+    <script src="https://kit.fontawesome.com/5eda4bd90f.js" crossorigin="anonymous"></script>
+
+    
+  </head>
+  <body>
+    <div class="nav">
+      <i class="fas fa-bars"></i>
+      <p class="nav-title">Adopte ta paire</p>
+    </div>
+    <div class="container">
+      <div class="card">
+        <p class="card-title">Adopte ta paire</p>
+        <p class="card-body">Gestion automatique des produits</p>
+      </div>
+  
+      <div class="card">
+        <p class="card-title">Chrome</p>
+        <p class="card-body">Ouvrir Chrome pour que le logiciel puisse le controller</p>
+        
+        <button class="card-footer" id='open-chrome'>Ouvrir</button>
+      </div>
+      
+      <div class="card message hidden" id="message">
+        <div class="card-title">
+          <p id="message-title"></p>
+          <i style="font-size: 20px;" id="message-logo" class="fas fa-check"></i>
+        </div>
+        <p class="card-body" id="message-body"></p>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Info</p>
+        <p class="card-body">Visit the website for more informations</p>
+        
+        <a class="card-footer button" href='https://atp.pj-lefort.com/' target="_blank">Site web</a>
+      </div>
+      
+    </div>
+
+    <button class="refresh" id='refresh'><i class="fas fa-redo-alt"></i></button>
+
+    <!-- You can also require other files to run in this process -->
+    <script src="../dist/renderer.js"></script>
+  </body>
+</html>

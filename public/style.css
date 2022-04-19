@@ -1,0 +1,148 @@
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #121212;
+  margin: 0;
+  padding: 0;
+}
+
+.nav {
+  background-color: #222222;
+  width: 100%;
+  height: 50px;
+  color: #dedede;
+  
+  box-shadow: 2px 2px 5px black;
+
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+.nav > * {
+  margin: 0px;
+  margin-right: 5px;
+  margin-left: 15px;
+}
+
+.nav-title {
+}
+
+.container {
+  margin: 0 auto;
+  width: 95%;
+
+  display: flex;
+  /* flex-direction: column; */
+  flex-wrap: wrap;
+}
+
+.container > * { /* center everything inside container */
+  flex: 1 1 auto;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.message {
+  color: black !important;
+  max-width: 230px;
+}
+
+.message > .card-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.message > .card-body {
+  font-size: larger;
+}
+
+.message > * {
+  color: black !important;
+}
+
+.error {
+  background-color: #CF6679 !important;
+}
+
+.success {
+  background-color: #66cfcf !important;
+}
+
+.refresh {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  border-radius: 50%;
+}
+
+.card {
+  background-color: #1e1e1e;
+  border-radius: 2%;
+  box-shadow: 2px 2px 5px black;
+
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: top;
+  flex-direction: column;
+
+  padding: 5px 15px;
+}
+
+.card-title {
+  color: #999999;
+}
+
+.card-body {
+  color: #dedede;
+}
+
+.card-footer {
+  flex: 1 1 auto;
+  margin-bottom: 10px;
+}
+
+button, .button {
+  background-color: #03DAC6;
+  font-family: 'Roboto', sans-serif;
+  color: black;
+  border: 0;
+  border-radius: 3px;
+
+  padding: 10px;
+
+  text-decoration: unset;
+  text-align: center;
+  align-items: flex-start;
+  cursor: pointer;
+  font-weight: 400;
+  font-size: 13.3333px;
+  line-height: normal;
+}
+
+.visible,
+.hidden {
+  overflow: hidden;
+  /* This container should not have padding, borders, etc. */
+}
+.visible {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 1s linear;
+}
+.hidden {
+  visibility: hidden;
+  opacity: 0;
+  transition: visibility 0s 1s, opacity 1s linear;
+}
+.visible > div,
+.hidden > div {
+  /* Put any padding, border, min-height, etc. here. */
+}
+.hidden > div {
+  margin-top: -10000px;
+  transition: margin-top 0s 1s;
+  z-index: 1000;
+}
