@@ -44,4 +44,25 @@ window.addEventListener("DOMContentLoaded", () => {
 	};
 
 	window.api.window.onError((message) => setMessage("Error", "error", message));
+
+	const continueCard = {
+		card: document.getElementById("continue"),
+		title: document.getElementById("continue-title"),
+		logo: document.getElementById("continue-logo"),
+		body: document.getElementById("continue-body"),
+		button: document.getElementById("continue-button"),
+	};
+
+	window.api.chrome.onNeedContinue((...args: unknown[]) => {
+		continueCard.card.classList.remove("hidden");
+		continueCard.card.classList.add("visible");
+
+		continueCard.body.innerText = args[0] as string;
+
+		continueCard.button.addEventListener("click", () => {
+			continueCard.card.classList.add("hidden");
+			continueCard.card.classList.remove("visible");
+			window.api.chrome.continue();
+		});
+	});
 });

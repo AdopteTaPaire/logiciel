@@ -11,11 +11,12 @@ import * as path from "path";
 import Browser from "./Browser";
 
 export default class Main {
-	static mainWindow: BrowserWindow;
-	static application: Electron.App;
-	static BrowserWindow: typeof BrowserWindow;
-	static tray: Tray;
-	static ipcInitied: boolean;
+	private static mainWindow: BrowserWindow;
+	private static application: Electron.App;
+	private static BrowserWindow: typeof BrowserWindow;
+	private static tray: Tray;
+	private static ipcInitied: boolean;
+	private static continueCallback: () => void;
 
 	private static onWindowAllClosed() {
 		// just hide the window, do not quit the app.
@@ -34,11 +35,16 @@ export default class Main {
 			try {
 				await Browser.launchBrowser();
 			} catch (e) {
-				Main.sendNotification("Error", e.message);
-				Main.mainWindow.webContents.send("app-error", e.message);
+				Main.sendError(e.message);
 			}
 		});
+		ipcMain.on("app-continue", () => Main.continueCallback());
 		Main.ipcInitied = true;
+	}
+
+	static needContinue(text: string, cb: () => void) {
+		Main.continueCallback = cb; // avoid register multiple on.
+		Main.mainWindow.webContents.send("app-continue", text);
 	}
 
 	private static onReady() {
@@ -91,7 +97,7 @@ export default class Main {
 		Main.tray.setContextMenu(contextMenu);
 	}
 
-	private static sendNotification(title: string, body: string) {
+	static sendNotification(title: string, body: string) {
 		new Notification({
 			title,
 			body,
@@ -99,6 +105,11 @@ export default class Main {
 				path.join(__dirname, "../public/app.png")
 			),
 		}).show();
+	}
+
+	static sendError(error: string, notify = true) {
+		if (notify) Main.sendNotification("Error", error);
+		Main.mainWindow.webContents.send("app-error", error);
 	}
 
 	static main(app: Electron.App, browserWindow: typeof BrowserWindow) {

@@ -7,6 +7,12 @@ const chrome = {
 	open: () => {
 		ipcRenderer.send("open-chrome");
 	},
+	continue: () => {
+		ipcRenderer.send("app-continue");
+	},
+	onNeedContinue: (callback: (...args: unknown[]) => void) => {
+		ipcRenderer.on("app-continue", (event, ...args) => callback(...args));
+	},
 };
 
 const _window = {
