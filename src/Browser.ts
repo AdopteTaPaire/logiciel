@@ -21,7 +21,7 @@ export default class Browser {
 					args?: { [key: string]: string };
 					actions: {
 						type: "click" | "input" | "wait" | "human";
-						condition?: "exists";
+						condition?: "notexists";
 						selector?: string;
 						value?: string;
 						text?: string;
@@ -135,25 +135,15 @@ export default class Browser {
 				action.selector ?? action.value
 			);
 
-			if (action.condition) {
-				// check the condition
-				switch (action.condition) {
-					case "exists": {
-						if (!(await page.$(action.selector))) {
-							console.log("Condition not met: " + action.selector);
-							continue;
-						}
-					}
-				}
-			}
-
 			try {
 				if (action.selector) {
 					await page.waitForSelector(action.selector);
 				}
 			} catch (e) {
-				console.log("Could not find selector: " + action.selector);
-				continue;
+				if (!action.condition && action.condition != "notexists") {
+					console.log("Could not find selector: " + action.selector);
+					continue;
+				}
 			}
 
 			// do the action

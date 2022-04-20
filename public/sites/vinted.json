@@ -41,7 +41,6 @@
 					"value": "5000"
 				},
 				{
-					"condition": "exists",
 					"type": "human",
 					"text": "Veuillez valider le captcha",
 					"selector": "#g-recaptcha-response"
