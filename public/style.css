@@ -64,9 +64,6 @@ body {
   width: 70%;
 }
 
-.nav-title {
-}
-
 .container {
   margin: 0 auto;
   width: 95%;
@@ -178,10 +175,10 @@ body {
   transition: visibility 0s 1s, opacity 1s linear;
   display: none;
 }
-.visible > div,
+/* .visible > div,
 .hidden > div {
-  /* Put any padding, border, min-height, etc. here. */
-}
+  /* Put any padding, border, min-height, etc. here.
+} */
 .hidden > div {
   margin-top: -10000px;
   transition: margin-top 0s 1s;

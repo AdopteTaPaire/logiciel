@@ -16,6 +16,7 @@ export default class Main {
 	private static application: Electron.App;
 	private static BrowserWindow: typeof BrowserWindow;
 	private static tray: Tray;
+	private static ipcInitied: boolean;
 	private static continueCallback: () => void;
 
 	private static onWindowAllClosed() {
@@ -24,13 +25,7 @@ export default class Main {
 	}
 
 	private static initIpc() {
-		[
-			"app-refresh",
-			"app-continue",
-			"open-chrome",
-			"app-get-parameters",
-			"app-set-parameters",
-		].map((a) => ipcMain.removeAllListeners(a));
+		if (Main.ipcInitied) return;
 
 		ipcMain.on("app-refresh", Main.onReady);
 		ipcMain.on("open-chrome", async () => {
@@ -56,6 +51,8 @@ export default class Main {
 			const value = args[1];
 			Parameter.set(param, value);
 		});
+
+		Main.ipcInitied = true;
 	}
 
 	static needContinue(text: string, cb: () => void) {

@@ -19,10 +19,6 @@ export default class Browser {
 			scripts: {
 				[key: string]: {
 					page: string;
-					condition: {
-						type: string;
-						selector: string;
-					};
 					args?: { [key: string]: string };
 					actions: {
 						type: "click" | "input" | "wait" | "human";
@@ -237,10 +233,6 @@ export default class Browser {
 		console.log(data.version);
 		Browser.initied = true;
 
-		await Browser.runScript("leboncoin", "login", {
-			email: "pierrejeanlef84150@gmail.com",
-			password: "CkLYHJbqm5HP",
-		});
 		return true;
 	}
 }
