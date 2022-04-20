@@ -1,10 +1,15 @@
 import * as puppeteer from "puppeteer-core";
 import * as fs from "fs";
 import * as path from "path";
+import axios from "axios";
+import * as child_process from "child_process";
+import * as os from "os";
 import Main from "./Main";
+import delay from "./utils/delay";
 
 export default class Browser {
 	private static browser: puppeteer.Browser;
+	private static process: child_process.ChildProcess;
 	private static initied = false;
 	private static sites: {
 		[key: string]: {
@@ -23,8 +28,9 @@ export default class Browser {
 						type: "click" | "input" | "wait" | "human";
 						condition?: "notexists";
 						selector?: string;
-						value?: string;
+						value?: string | number;
 						text?: string;
+						continue?: boolean; // If true, the script will continue if the selector is not found
 					}[];
 				};
 			};
@@ -44,6 +50,10 @@ export default class Browser {
 			console.log("Error loading site: ", e);
 			return null;
 		}
+	}
+
+	private static async getChromePath() {
+		return `${os.homedir()}\\AppData\\Local\\Google\\Chrome\\User Data`;
 	}
 
 	private static async fetchApi(
@@ -99,7 +109,11 @@ export default class Browser {
 		if (!scriptData) return Main.sendError("No script data !");
 
 		if (!page) page = await Browser.browser.newPage();
-		await page.goto(`${siteData.url}/${scriptData.page}`);
+		await page.goto(
+			scriptData.page.indexOf("http") != -1
+				? scriptData.page
+				: `${siteData.url}/${scriptData.page}`
+		); // redirect to page url if it contains http otherwise, use site url + page endpoint
 		// await waitTillHTMLRendered(page);
 
 		if (siteData.cookies) {
@@ -140,9 +154,12 @@ export default class Browser {
 					await page.waitForSelector(action.selector);
 				}
 			} catch (e) {
-				if (!action.condition && action.condition != "notexists") {
+				if (
+					(!action.condition && action.condition != "notexists") ||
+					!action.continue
+				) {
 					console.log("Could not find selector: " + action.selector);
-					continue;
+					return;
 				}
 			}
 
@@ -156,7 +173,7 @@ export default class Browser {
 					await page.keyboard.type(args[action.value]);
 					break;
 				case "wait":
-					await page.waitForTimeout(parseInt(action.value));
+					await page.waitForTimeout(action.value as number);
 					break;
 				case "human":
 					await Browser.humanAction(site, script, action.text);
@@ -169,25 +186,41 @@ export default class Browser {
 		return page;
 	}
 
+	private static async launchProcess() {
+		// make a new process to avoid all puppeteer paramaters. Usefull for bypassing bot detection
+		Browser.process = child_process.spawn(
+			"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+			[
+				"--remote-debugging-port=9222",
+				`--user-data-dir=${await Browser.getChromePath()}`,
+			],
+			{
+				detached: false,
+			}
+		);
+		return Browser.process;
+	}
+
 	static async launchBrowser() {
 		if (Browser.browser) {
 			await Browser.browser.close();
 		}
 
-		try {
-			const options: Parameters<typeof puppeteer.launch>[0] = {
-				headless: false,
-				defaultViewport: {
-					width: 1500,
-					height: 800,
-				},
-				executablePath:
-					"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-				ignoreDefaultArgs: ["--disable-extensions"],
-				args: [`--start-maximized`],
-			};
+		if (Browser.process) {
+			Browser.process.kill();
+		}
 
-			Browser.browser = await puppeteer.launch(options);
+		await Browser.launchProcess();
+
+		// wait for the browser to be ready
+		await delay(3000);
+		// using delay to have a promise timeout
+
+		try {
+			const response = await axios.get("http://localhost:9222/json/version");
+			Browser.browser = await puppeteer.connect({
+				browserWSEndpoint: response.data?.webSocketDebuggerUrl,
+			});
 		} catch (e) {
 			console.log("Browser opening error: ", e);
 			throw new Error(
@@ -195,18 +228,19 @@ export default class Browser {
 			);
 		}
 
-		setTimeout(async () => {
-			const data = await Browser.fetchApi("/version");
-			if (!data) {
-				return Main.sendError("Could not connect to the API.");
-			}
-			console.log(data.version);
-			Browser.initied = true;
+		await delay(2000);
 
-			// await Browser.runScript("vinted", "login", {
-			// 	email: "pj",
-			// 	password: "1234",
-			// });
-		}, 3000);
+		const data = await Browser.fetchApi("/version");
+		if (!data) {
+			throw new Error("Could not connect to the API.");
+		}
+		console.log(data.version);
+		Browser.initied = true;
+
+		await Browser.runScript("leboncoin", "login", {
+			email: "pierrejeanlef84150@gmail.com",
+			password: "CkLYHJbqm5HP",
+		});
+		return true;
 	}
 }

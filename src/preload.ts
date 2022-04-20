@@ -24,9 +24,24 @@ const _window = {
 	},
 };
 
+const params = {
+	get: (param: string) => {
+		ipcRenderer.send("app-get-parameters", param);
+	},
+	onGet: (callback: (param: string, value: string) => void) => {
+		ipcRenderer.on("app-get-parameters", (event, ...args) =>
+			callback(args[0], args[1])
+		);
+	},
+	set: (param: string, value: string) => {
+		ipcRenderer.send("app-set-parameters", param, value);
+	},
+};
+
 export const API = {
 	chrome,
 	window: _window,
+	params,
 };
 
 // Expose protected methods that allow the renderer process to use

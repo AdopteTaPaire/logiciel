@@ -43,7 +43,8 @@
 				{
 					"type": "human",
 					"text": "Veuillez valider le captcha",
-					"selector": "#g-recaptcha-response"
+					"selector": "#g-recaptcha-response",
+					"continue": true
 				},
 				{
 					"type": "wait",

@@ -8,6 +8,7 @@ import {
 	Notification,
 } from "electron";
 import * as path from "path";
+import Parameter from "./Parameter";
 import Browser from "./Browser";
 
 export default class Main {
@@ -15,7 +16,6 @@ export default class Main {
 	private static application: Electron.App;
 	private static BrowserWindow: typeof BrowserWindow;
 	private static tray: Tray;
-	private static ipcInitied: boolean;
 	private static continueCallback: () => void;
 
 	private static onWindowAllClosed() {
@@ -23,23 +23,39 @@ export default class Main {
 		if (process.platform == "darwin") Main.application.dock.hide();
 	}
 
-	private static onClose() {
-		// Dereference the window object.
-		Main.mainWindow = null;
-	}
-
 	private static initIpc() {
-		if (Main.ipcInitied) return;
+		[
+			"app-refresh",
+			"app-continue",
+			"open-chrome",
+			"app-get-parameters",
+			"app-set-parameters",
+		].map((a) => ipcMain.removeAllListeners(a));
+
 		ipcMain.on("app-refresh", Main.onReady);
 		ipcMain.on("open-chrome", async () => {
 			try {
-				await Browser.launchBrowser();
+				if (await Browser.launchBrowser()) {
+					Main.sendNotification("Navigateur", "Le navigateur est opérationnel");
+				}
 			} catch (e) {
 				Main.sendError(e.message);
 			}
 		});
 		ipcMain.on("app-continue", () => Main.continueCallback());
-		Main.ipcInitied = true;
+
+		ipcMain.on("app-get-parameters", (event, ...args) => {
+			const param = args[0];
+			const val = Parameter.get(param);
+
+			if (!val) return;
+			Main.mainWindow.webContents.send("app-get-parameters", param, val);
+		});
+		ipcMain.on("app-set-parameters", (event, ...args) => {
+			const param = args[0];
+			const value = args[1];
+			Parameter.set(param, value);
+		});
 	}
 
 	static needContinue(text: string, cb: () => void) {
@@ -63,7 +79,6 @@ export default class Main {
 		Main.mainWindow.loadURL(
 			"file://" + path.resolve(__dirname, "../public/index.html")
 		);
-		Main.mainWindow.on("closed", Main.onClose);
 
 		Main.mainWindow.webContents.once("new-window", function (e, url) {
 			// open external links in default browser

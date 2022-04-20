@@ -9,7 +9,22 @@ const messagesTypes: { [key: string]: { logo: string } } = {
 	error: { logo: "fa-exclamation-circle" },
 };
 
+const params: { [key: string]: string } = {
+	vinted_email: "",
+	vinted_password: "",
+	lbc_email: "",
+	lbc_password: "",
+};
+
 window.addEventListener("DOMContentLoaded", () => {
+	const menuButton = document.getElementById("menu");
+	const navPanel = document.getElementsByClassName("nav-panel")[0];
+
+	if (menuButton && navPanel)
+		menuButton.addEventListener("click", () => {
+			navPanel.classList.toggle("close");
+		});
+
 	const openChrome = document.getElementById("open-chrome");
 	if (openChrome) openChrome.addEventListener("click", window.api.chrome.open);
 
@@ -64,5 +79,45 @@ window.addEventListener("DOMContentLoaded", () => {
 			continueCard.card.classList.remove("visible");
 			window.api.chrome.continue();
 		});
+	});
+
+	const parameters = document.getElementById("parameters");
+	if (parameters) {
+		parameters.innerHTML = "";
+		for (const param in params) {
+			window.api.params.get(param);
+
+			const elem = document.createElement("div");
+			elem.classList.add("input");
+
+			const label = document.createElement("label");
+			label.innerText = param;
+			label.setAttribute("for", param);
+			elem.appendChild(label);
+
+			const input = document.createElement("input");
+			input.id = param;
+			input.name = param;
+			input.type = param.indexOf("password") != -1 ? "password" : "text";
+			input.value = params[param];
+			input.addEventListener("change", () => {
+				params[param] = input.value;
+				window.api.params.set(param, input.value);
+			});
+			elem.appendChild(input);
+
+			parameters.appendChild(elem);
+		}
+	}
+
+	window.api.params.onGet((param: string, value: string) => {
+		console.log("got");
+
+		params[param] = value;
+
+		if (parameters) {
+			const input = document.getElementById(param) as HTMLInputElement;
+			if (input) input.value = value;
+		}
 	});
 });
