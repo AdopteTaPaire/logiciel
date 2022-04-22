@@ -38,6 +38,10 @@ export default class Parameter {
 		return Parameter.parameters[key];
 	}
 
+	static getAll() {
+		return Parameter.parameters;
+	}
+
 	static set(key: string, value: string) {
 		Parameter.parameters[key] = value;
 		Parameter.save();
