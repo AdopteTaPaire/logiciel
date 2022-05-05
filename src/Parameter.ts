@@ -6,16 +6,26 @@ export default class Parameter {
 	private static parameters: {
 		[key: string]: string;
 	} = {};
+	private static defaultParams: { [key: string]: string } = {
+		chrome_path:
+			"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+	};
 
 	static init() {
 		if (Parameter.initied) return;
 
 		try {
-			const parametersJson = fs.readFileSync(
-				path.resolve(__dirname, "../parameters.json")
-			);
-			const parameters = JSON.parse(parametersJson.toString());
-			Parameter.parameters = parameters;
+			const paramsPath = path.resolve(__dirname, "../parameters.json");
+			if (fs.existsSync(paramsPath)) {
+				const parametersJson = fs.readFileSync(
+					path.resolve(__dirname, "../parameters.json")
+				);
+				const parameters = JSON.parse(parametersJson.toString());
+				Parameter.parameters = parameters;
+			} else {
+				Parameter.parameters = {};
+			}
+
 			Parameter.initied = true;
 		} catch (e) {
 			console.log("Error loading parameters: ", e);
@@ -35,10 +45,11 @@ export default class Parameter {
 
 	static get(key: string) {
 		if (!this.initied) Parameter.init();
-		return Parameter.parameters[key];
+		return Parameter.parameters[key] ?? Parameter.defaultParams[key] ?? "";
 	}
 
 	static getAll() {
+		if (!this.initied) Parameter.init();
 		return Parameter.parameters;
 	}
 

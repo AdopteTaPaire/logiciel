@@ -14,6 +14,9 @@ const params: { [key: string]: string } = {
 	vinted_password: "",
 	lbc_email: "",
 	lbc_password: "",
+	app_username: "",
+	app_password: "",
+	chrome_path: "",
 };
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -111,8 +114,6 @@ window.addEventListener("DOMContentLoaded", () => {
 	}
 
 	window.api.params.onGet((param: string, value: string) => {
-		console.log("got");
-
 		params[param] = value;
 
 		if (parameters) {
