@@ -3,45 +3,32 @@ import axios from "axios";
 import * as child_process from "child_process";
 import * as path from "path";
 import * as fs from "fs";
-import * as http from "http";
+import * as _ from "lodash";
 import Main from "./Main";
 import delay from "./utils/delay";
 import Parameter from "./Parameter";
 import { compute as productCompute } from "./utils/product";
-import { parse as stringParse } from "./utils/string";
+import Script, { IScriptData } from "./Script";
 
-export interface ISite {
+interface ISiteBase {
 	url: string;
 	title: string;
 	cookies?: string;
+}
+
+// This interface is the data we receive from the api
+export interface ISiteData extends ISiteBase {
+	// If you need infos about all the fields, go see the comments in the api side, in the ./lib/sites/index.ts file
+	// All the fiels are copy pasted
 	scripts: {
-		[key: string]: {
-			page: string;
-			args?: { [key: string]: string };
-			condition?: {
-				type: "notexists";
-				selector: string;
-				action?: string;
-				else: string;
-			};
-			actions: {
-				type: "click" | "input" | "wait" | "human" | "upload";
-				validation?: {
-					type: "iframe" | "input";
-					value: string | boolean;
-					continue?: boolean;
-				};
-				selector?: string;
-				selectors?: { [key: string]: string };
-				value?: string;
-				value2?: string | number;
-				valueCustom?: string | number;
-				text?: string;
-				continue?: boolean; // If true, the script will continue if the selector is not found
-				for: ISite["scripts"]["actions"];
-				relaunch?: boolean; // If true, the script will relaunch if the selector is found. Usefull for human confirm, relaunch the script after the confirm.
-			}[];
-		};
+		[key: string]: IScriptData;
+	};
+}
+
+// This one is how we store it in the Browser attribute
+export interface ISite extends ISiteBase {
+	scripts: {
+		[key: string]: Script;
 	};
 }
 export default class Browser {
@@ -65,18 +52,40 @@ export default class Browser {
 	} = {};
 
 	private static async loadSite(site: string) {
+		// if the site already exists in cache, we don't need to fetch it again
+		if (Browser.sites[site]) return Browser.sites[site];
+
 		try {
 			const response = await Browser.fetchApi(`/actions/script?site=${site}`);
 			if (!response) {
 				throw new Error("Error loading site.");
 			}
-			Browser.sites[site] = response.data.site;
+			const siteData = response.data.site as ISiteData;
+			// we'll instanciate the scripts to be able to run them.
+			const newSite = _.omit(siteData, ["scripts"]) as ISite;
+			newSite.scripts = {};
 
-			return Browser.sites[site];
+			for (const [key, script] of Object.entries(siteData.scripts)) {
+				newSite.scripts[key] = new Script(site, key, siteData, script);
+			}
+
+			Browser.sites[site] = newSite;
+			return newSite;
 		} catch (e) {
 			console.log("Error loading site: ", e);
 			return null;
 		}
+	}
+
+	static async getSite(site: string) {
+		await Browser.loadSite(site);
+
+		return Browser.sites[site];
+	}
+
+	static async getScript(site: string, script: string) {
+		const siteData = await Browser.getSite(site);
+		return siteData ? siteData.scripts[script] : null;
 	}
 
 	private static async getChromePath() {
@@ -138,8 +147,8 @@ export default class Browser {
 				...action.args,
 				...productCompute(action.product),
 			});
+			if (!did) return; // avoid the action to rerun if it failed
 			action.running = false;
-			if (!did) return;
 		} catch (e) {
 			console.log("Error running action: ", e);
 			Main.sendError("Error running action: " + e.message);
@@ -150,7 +159,7 @@ export default class Browser {
 		console.log("Action done: ", action.site, action.script);
 		action.state = 1;
 		Browser.actions.shift();
-		// await Browser.fetchApi(`/actions/update?id=${action._id}&state=1`);
+		await Browser.fetchApi(`/actions/update?id=${action._id}&state=1`);
 	}
 
 	private static initIntervals() {
@@ -179,7 +188,7 @@ export default class Browser {
 		}
 	}
 
-	private static humanAction(site: string, script: string, text: string) {
+	public static humanAction(site: string, script: string, text: string) {
 		return new Promise((resolve) => {
 			Main.sendNotification(
 				site + " - " + script,
@@ -193,243 +202,18 @@ export default class Browser {
 	}
 
 	static async runScript(
-		site: string,
-		script: string,
+		siteName: string,
+		scriptName: string,
 		args?: { [key: string]: string },
 		page?: puppeteer.Page
 	): Promise<puppeteer.Page | void> {
-		if (!Browser.sites[site]) {
-			if (!(await Browser.loadSite(site)))
-				return Main.sendError("Could not open site: " + site);
-		}
+		const script = await Browser.getScript(siteName, scriptName);
+		if (!script) return null;
+		return await script.run(args, page);
+	}
 
-		console.log(
-			"Running script: " + script + " on site " + site + " with args: ",
-			args
-		);
-
-		const siteData = Browser.sites[site];
-		const scriptData = siteData.scripts[script];
-		if (!scriptData) return Main.sendError("No script data !");
-
-		// check script arguments
-		if (scriptData.args) {
-			console.log("Checking script args...");
-			if (!args) throw new Error("Missing arguments object !");
-
-			for (const arg in scriptData.args) {
-				if (args[arg]) continue;
-
-				if (scriptData.args[arg] == "") {
-					throw new Error("Missing argument: " + arg);
-				}
-
-				args[arg] = scriptData.args[arg];
-			}
-		}
-
-		if (!page) page = await Browser.browser.newPage();
-		// redirect to page url if it contains http otherwise, use site url + page endpoint
-		const newUrl =
-			scriptData.page.indexOf("http") != -1
-				? scriptData.page
-				: `${siteData.url}/${scriptData.page}`;
-		// Check if we're already on the page
-		if (page.url().indexOf(newUrl) == -1) await page.goto(newUrl);
-
-		// accept cookies first
-		if (siteData.cookies) {
-			console.log("Accepting cookies...");
-			try {
-				await page.waitForSelector(siteData.cookies, { timeout: 5000 });
-
-				await page.click(siteData.cookies);
-				await page.waitForTimeout(3000); // wait for website to compute
-
-				console.log("Cookies accepted");
-			} catch (e) {
-				console.log("No cookies to accept");
-			}
-		}
-
-		if (scriptData.condition) {
-			// if the selector is found and condition = notexists, run the else script and then re-run the actual script
-			console.log("Checking script condition");
-
-			const onNotFullfilled: () => Promise<puppeteer.Page | void> =
-				async () => {
-					const curPage = await Browser.runScript(
-						site,
-						scriptData.condition.else,
-						args,
-						page
-					);
-					if (!curPage) {
-						await page.close();
-						throw new Error(
-							"Error while running else condition of " + site + " " + script
-						);
-					}
-
-					return Browser.runScript(site, script, args, page);
-				};
-
-			try {
-				await page.waitForSelector(scriptData.condition.selector, {
-					timeout: 5000,
-				});
-
-				// here selector exists because waitForSelector didn't throw an error
-				if (scriptData.condition.type === "notexists") {
-					if (scriptData.condition.action == "click") {
-						await page.click(scriptData.condition.selector); // usefull when we need to click on a login button for exemple
-						// for leboncoin, if we don't click on a login button, the redirect_uri is not set and we can't log in
-					}
-
-					return onNotFullfilled();
-				}
-			} catch (e) {
-				// selector doesnt exists
-				if (scriptData.condition.type !== "notexists") {
-					return onNotFullfilled();
-				}
-			}
-		}
-
-		// loop to run the actions in the script
-		for (const action of scriptData.actions) {
-			let selector = action.selector;
-
-			if (action.value && action.selectors) {
-				// if the action value & an array of selector is set, means we have multiple selector to choose based on the value
-				for (const [selecName, selec] of Object.entries(action.selectors)) {
-					// the key is the name of the selector, we need to see if the value contains the key
-					if (args[action.value].indexOf(selecName) !== -1) {
-						selector = selec;
-					}
-				}
-
-				if (selector == action.selector) {
-					// if we didn't find a selector, we use the default one
-					selector = action.selectors.default;
-				}
-			}
-
-			console.log(
-				"Running action",
-				action.type,
-				selector ?? action.value ?? action.valueCustom
-			);
-
-			try {
-				// if no selector & a certain action, then return;
-				// this little action array is the actions which need to have a valid selector
-				if (
-					!selector &&
-					["click", "input", "upload"].indexOf(action.type) != -1
-				)
-					throw new Error("No selector");
-
-				if (selector) {
-					// check if the selector is valid, if not it'll throw an error
-					const element = await page.waitForSelector(selector, {
-						timeout: 5000,
-					});
-
-					if (action.validation) {
-						switch (action.validation.type) {
-							case "iframe": {
-								// if we need to validate an iframe, we see all frame and then if we match the src, means we good
-								const frames = await page.frames();
-								const frame = frames.find((f) =>
-									f.url().includes(action.validation.value as string)
-								);
-								if (!frame) {
-									if (action.validation.continue) continue;
-									throw new Error("No frame found"); // will trigger the catch
-								}
-								// atm the moment, this is used to check leboncoin captacha, if we find the iframe, we continue the script execution to make the human do the captcha
-
-								break;
-							}
-							case "input": {
-								const val = await (
-									await element.getProperty("checked")
-								).jsonValue();
-								console.log(
-									"Input value",
-									val,
-									typeof val,
-									action.validation.value
-								);
-								if (val != action.validation.value) {
-									if (action.validation.continue) continue;
-									throw new Error("Value not valid");
-								}
-
-								break;
-							}
-						}
-					}
-				}
-			} catch (e) {
-				if (!action.continue) {
-					console.log(e.message + ": " + selector);
-					return await page.close();
-				} else {
-					continue;
-				}
-			}
-
-			// do the action
-			switch (action.type) {
-				case "click": {
-					await page.click(selector);
-					break;
-				}
-				case "input":
-					await page.click(selector);
-					await page.keyboard.type(
-						args[action.value] ?? (action.value2 ? args[action.value2] : ""), // if value doesn't exist, use value2, or ""
-						{ delay: 100 }
-					);
-					break;
-				case "wait":
-					await page.waitForTimeout(action.valueCustom as number);
-					break;
-				case "human":
-					await Browser.humanAction(site, script, action.text);
-					break;
-				case "upload": {
-					const endpoint = stringParse(action.value.toString(), args);
-					if (!fs.existsSync(action.value.toString())) {
-						http.get(`${process.env.APP_URL}${endpoint}`, (res) => {
-							const file = fs.createWriteStream(
-								path.resolve(__dirname, "../", endpoint)
-							);
-							res.pipe(file);
-							file.on("finish", () => {
-								file.close();
-								console.log("File downloaded");
-							});
-						});
-					}
-					const elem = await page.$(selector);
-					await elem.uploadFile(path.resolve(__dirname, "../", endpoint));
-
-					break;
-				}
-				default:
-					await page.close();
-					throw new Error("Unknown action type: " + action.type);
-			}
-
-			if (action.relaunch) {
-				return Browser.runScript(site, script, args, page);
-			}
-		}
-
-		return page;
+	static newPage() {
+		return Browser.browser.newPage();
 	}
 
 	private static onClose() {
@@ -491,6 +275,40 @@ export default class Browser {
 		}
 	}
 
+	private static async uploadTest() {
+		const value = "/images/products/PHOTOS/A4/A4%20(1).jpg";
+		const selector = "#file";
+
+		const page = await Browser.browser.newPage();
+		await page.goto("file:///C:/Users/pj841/Documents/STAGE/upload_test.html");
+
+		const endpoint = value.toString();
+		const imgPath = path.resolve(__dirname, "../public" + endpoint);
+
+		// if we don't have the image in our files, download it from the api
+		if (!fs.existsSync(imgPath)) {
+			console.log("doesnt exists, downloading");
+			// remove the file name from the path
+			const dirPath = imgPath.replace(path.basename(imgPath), "");
+			console.log(dirPath);
+
+			fs.mkdirSync(dirPath, { recursive: true });
+
+			// http.get(`${process.env.APP_URL}${endpoint}`, (res) => {
+			// 	console.log("creating file stream");
+			// 	const file = fs.createWriteStream(imgPath);
+			// 	res.pipe(file);
+			// 	file.on("finish", () => {
+			// 		file.close();
+			// 		console.log("File downloaded");
+			// 	});
+			// });
+		}
+
+		const elem = await page.$(selector);
+		await elem.uploadFile(imgPath);
+	}
+
 	static async launchBrowser() {
 		if (Browser.browser) {
 			await Browser.browser.close();
@@ -530,6 +348,7 @@ export default class Browser {
 
 		Browser.initIntervals();
 		// Browser.TRIGGERCAPTCHA();
+		// Browser.uploadTest();
 
 		return true;
 	}

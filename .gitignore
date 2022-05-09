@@ -5,3 +5,5 @@ parameters.json
 
 chrome
 .env
+
+public/images/
