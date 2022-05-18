@@ -7,6 +7,7 @@
   "license": "ISC",
   "repository": "https://github.com/AdopteTaPaire/logiciel",
   "main": "dist/electron.js",
+  "email": "commandes@adoptetapaire.fr",
   "scripts": {
     "postinstall": "electron-builder install-app-deps",
     "build": "rm -rf ./dist && tsc",
