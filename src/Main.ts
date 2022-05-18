@@ -7,6 +7,7 @@ import {
 	ipcMain,
 	Notification,
 } from "electron";
+import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import Parameter from "./Parameter";
 import Browser from "./Browser";
@@ -84,6 +85,7 @@ export default class Main {
 		});
 
 		Main.initIpc();
+		autoUpdater.checkForUpdatesAndNotify();
 	}
 
 	private static createTray() {
