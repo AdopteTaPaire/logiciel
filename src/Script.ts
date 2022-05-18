@@ -75,8 +75,12 @@ export default class Script {
 	}
 
 	// create if not exists, and go to the script url
-	private async gotoPage(page: puppeteer.Page) {
-		if (!page) page = await Browser.newPage();
+	private async gotoPage(page: puppeteer.Page | undefined) {
+		if (!page) {
+			const browserPage = await Browser.newPage();
+			if (!browserPage) throw new Error("Error while creating page");
+			page = browserPage;
+		}
 		// redirect to page url if it contains http otherwise, use site url + page endpoint
 		const newUrl =
 			this.script.page.indexOf("http") != -1
@@ -109,50 +113,51 @@ export default class Script {
 		args: { [key: string]: string },
 		page: puppeteer.Page
 	) {
-		if (this.script.condition) {
-			// if the selector is found and condition = notexists, run the else script and then re-run the actual script
-			console.log("Checking script condition");
+		if (!this.script.condition) return;
 
-			const onNotFullfilled: () => Promise<puppeteer.Page | void> =
-				async () => {
-					const curPage = await Browser.runScript(
-						this.siteName,
-						this.script.condition.else,
-						args,
-						page
-					);
-					if (!curPage) {
-						await page.close();
-						throw new Error(
-							"Error while running else condition of " +
-								this.siteName +
-								" " +
-								this.scriptName
-						);
-					}
+		// if the selector is found and condition = notexists, run the else script and then re-run the actual script
+		console.log("Checking script condition");
 
-					return Browser.runScript(this.siteName, this.scriptName, args, page);
-				};
+		const onNotFullfilled: (
+			elseScript: string
+		) => ReturnType<typeof Browser.runScript> = async (elseScript) => {
+			const curPage = await Browser.runScript(
+				this.siteName,
+				elseScript,
+				args,
+				page
+			);
+			if (!curPage) {
+				await page.close();
+				throw new Error(
+					"Error while running else condition of " +
+						this.siteName +
+						" " +
+						this.scriptName
+				);
+			}
 
-			try {
-				await page.waitForSelector(this.script.condition.selector, {
-					timeout: 5000,
-				});
+			return Browser.runScript(this.siteName, this.scriptName, args, page);
+		};
 
-				// here selector exists because waitForSelector didn't throw an error
-				if (this.script.condition.type === "notexists") {
-					if (this.script.condition.action == "click") {
-						await page.click(this.script.condition.selector); // usefull when we need to click on a login button for exemple
-						// for leboncoin, if we don't click on a login button, the redirect_uri is not set and we can't log in
-					}
+		try {
+			await page.waitForSelector(this.script.condition.selector, {
+				timeout: 5000,
+			});
 
-					return onNotFullfilled();
+			// here selector exists because waitForSelector didn't throw an error
+			if (this.script.condition.type === "notexists") {
+				if (this.script.condition.action == "click") {
+					await page.click(this.script.condition.selector); // usefull when we need to click on a login button for exemple
+					// for leboncoin, if we don't click on a login button, the redirect_uri is not set and we can't log in
 				}
-			} catch (e) {
-				// selector doesnt exists
-				if (this.script.condition.type !== "notexists") {
-					return onNotFullfilled();
-				}
+
+				return onNotFullfilled(this.script.condition.else);
+			}
+		} catch (e) {
+			// selector doesnt exists
+			if (this.script.condition.type !== "notexists") {
+				return onNotFullfilled(this.script.condition.else);
 			}
 		}
 	}

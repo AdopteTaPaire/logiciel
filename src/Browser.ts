@@ -32,8 +32,8 @@ export interface ISite extends ISiteBase {
 	};
 }
 export default class Browser {
-	private static browser: puppeteer.Browser;
-	private static process: child_process.ChildProcess;
+	private static browser: puppeteer.Browser | null;
+	private static process: child_process.ChildProcess | null;
 	private static initied = false;
 	private static actionsFetchInterval: NodeJS.Timer;
 	private static actionsRunInterval: NodeJS.Timer;
@@ -151,7 +151,7 @@ export default class Browser {
 			action.running = false;
 		} catch (e) {
 			console.log("Error running action: ", e);
-			Main.sendError("Error running action: " + e.message);
+			Main.sendError("Error running action: " + (e as Error).message);
 			action.running = false;
 			return;
 		}
@@ -206,15 +206,16 @@ export default class Browser {
 		scriptName: string,
 		args?: { [key: string]: string },
 		page?: puppeteer.Page
-	): Promise<puppeteer.Page | void> {
+	): Promise<puppeteer.Page | void | null> {
 		console.log("Running script: ", siteName, scriptName);
 
 		const script = await Browser.getScript(siteName, scriptName);
 		if (!script) return null;
-		return await script.run(args, page);
+		return await script.run(args ?? {}, page);
 	}
 
 	static newPage() {
+		if (!Browser.browser) return null;
 		return Browser.browser.newPage();
 	}
 
@@ -258,6 +259,7 @@ export default class Browser {
 	}
 
 	private static async TRIGGERCAPTCHA() {
+		if (!Browser.browser) return;
 		// just a little function to make leboncoin ask us for the captcha (usefull to try to bypass it)
 		const page = await Browser.browser.newPage();
 		await page.goto("https://www.leboncoin.fr/deposer-une-annonce");
@@ -278,6 +280,8 @@ export default class Browser {
 	}
 
 	private static async uploadTest() {
+		if (!Browser.browser) return;
+
 		const value = "/images/products/PHOTOS/A4/A4%20(1).jpg";
 		const selector = "#file";
 
@@ -308,7 +312,7 @@ export default class Browser {
 		}
 
 		const elem = await page.$(selector);
-		await elem.uploadFile(imgPath);
+		if (elem) await elem.uploadFile(imgPath);
 	}
 
 	static async launchBrowser() {

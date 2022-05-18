@@ -120,7 +120,7 @@ export default class Action {
 							// if we need to validate an iframe, we see all frame and then if we match the src, means we good
 							const frames = await page.frames();
 							const frame = frames.find((f) =>
-								f.url().includes(this.action.validation.value as string)
+								f.url().includes(this.action.validation?.value as string)
 							);
 							if (!frame) {
 								if (this.action.validation.continue) return 0; // return 0 means continue to the next action
@@ -131,6 +131,8 @@ export default class Action {
 							break;
 						}
 						case "input": {
+							if (!element) throw new Error("No html element found");
+
 							const val = await (
 								await element.getProperty("checked")
 							).jsonValue();
@@ -152,7 +154,7 @@ export default class Action {
 			}
 		} catch (e) {
 			if (!this.action.continue) {
-				console.log(e.message + ": " + selector);
+				console.log((e as Error).message + ": " + selector);
 				await page.close();
 			}
 
@@ -194,7 +196,7 @@ export default class Action {
 				await Browser.humanAction(
 					this.script.getSiteName(),
 					this.script.getScriptName(),
-					this.action.text
+					this.action.text ?? ""
 				);
 				break;
 			case "upload": {
@@ -235,7 +237,7 @@ export default class Action {
 				}
 
 				const elem = await page.$(selector);
-				await elem.uploadFile(imgPath);
+				if (elem) await elem.uploadFile(imgPath);
 
 				break;
 			}
@@ -247,9 +249,10 @@ export default class Action {
 				let i = value as number;
 				if (!i) {
 					const element = await page.$(selector);
-					i = (await (
-						await element.getProperty("childElementCount")
-					).jsonValue()) as number;
+					if (element)
+						i = (await (
+							await element.getProperty("childElementCount")
+						).jsonValue()) as number;
 				}
 
 				for (let j = 0; j < i; j++) {

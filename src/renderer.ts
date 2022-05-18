@@ -41,24 +41,24 @@ window.addEventListener("DOMContentLoaded", () => {
 		body: document.getElementById("message-body"),
 	};
 
-	const setMessage = (title?: string, type?: string, body?: string) => {
+	const setMessage = (title: string, type: string, body: string) => {
 		if (!title) {
-			messageCard.card.classList.add("hidden");
-			messageCard.card.classList.remove("visible");
+			messageCard.card?.classList.add("hidden");
+			messageCard.card?.classList.remove("visible");
 			return;
 		}
-		messageCard.card.classList.remove("hidden");
-		messageCard.card.classList.add("visible");
+		messageCard.card?.classList.remove("hidden");
+		messageCard.card?.classList.add("visible");
 
 		for (const curType in messagesTypes) {
-			messageCard.card.classList.remove(curType);
-			messageCard.logo.classList.remove(messagesTypes[curType].logo);
+			messageCard.card?.classList.remove(curType);
+			messageCard.logo?.classList.remove(messagesTypes[curType].logo);
 		}
 
-		messageCard.card.classList.add(type);
-		messageCard.title.innerText = title;
-		messageCard.logo.classList.add(messagesTypes[type].logo);
-		messageCard.body.innerText = body;
+		messageCard.card?.classList.add(type);
+		if (messageCard.title) messageCard.title.innerText = title;
+		messageCard.logo?.classList.add(messagesTypes[type].logo);
+		if (messageCard.body) messageCard.body.innerText = body;
 	};
 
 	window.api.window.onError((message) => setMessage("Error", "error", message));
@@ -72,14 +72,14 @@ window.addEventListener("DOMContentLoaded", () => {
 	};
 
 	window.api.chrome.onNeedContinue((...args: unknown[]) => {
-		continueCard.card.classList.remove("hidden");
-		continueCard.card.classList.add("visible");
+		continueCard.card?.classList.remove("hidden");
+		continueCard.card?.classList.add("visible");
 
-		continueCard.body.innerText = args[0] as string;
+		if (continueCard.body) continueCard.body.innerText = args[0] as string;
 
-		continueCard.button.addEventListener("click", () => {
-			continueCard.card.classList.add("hidden");
-			continueCard.card.classList.remove("visible");
+		continueCard.button?.addEventListener("click", () => {
+			continueCard.card?.classList.add("hidden");
+			continueCard.card?.classList.remove("visible");
 			window.api.chrome.continue();
 		});
 	});

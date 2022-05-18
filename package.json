@@ -1,14 +1,13 @@
 {
   "name": "atp_electron",
   "version": "1.0.0",
-  "description": "",
+  "description": "App for AdopteTaPaire",
   "main": "dist/electron.js",
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && electron .",
-    "dev": "electron ."
+    "dist": "npm run build && electron-builder"
   },
   "keywords": [],
   "author": "",
@@ -18,15 +17,54 @@
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "axios": "^0.26.1",
+    "dotenv": "^16.0.0",
     "electron": "^18.0.4",
+    "electron-builder": "^23.0.3",
     "eslint": "^8.13.0",
-    "execa": "^6.1.0",
-    "mem": "^9.0.2",
+    "lodash": "^4.17.21",
     "puppeteer-core": "^13.5.2",
     "typescript": "^4.6.3"
   },
-  "dependencies": {
-    "dotenv": "^16.0.0",
-    "lodash": "^4.17.21"
+  "dependencies": {},
+  "build": {
+    "generateUpdatesFilesForAllChannels": true,
+    "appId": "fr.atp.app",
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "build"
+    },
+    "win": {
+      "icon": "assets/images/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        },
+        "zip"
+      ]
+    },
+    "mac": {
+      "icon": "assets/images/icon.icns",
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "linux": {
+      "target": [
+        "deb",
+        "zip"
+      ],
+      "category": "Utility",
+      "icon": "assets/images/linux-icon.png"
+    }
   }
 }
