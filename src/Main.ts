@@ -34,7 +34,7 @@ export default class Main {
 					Main.sendNotification("Navigateur", "Le navigateur est opérationnel");
 				}
 			} catch (e) {
-				Main.sendError(e.message);
+				Main.sendError((e as Error).message);
 			}
 		});
 		ipcMain.on("app-continue", () => Main.continueCallback());

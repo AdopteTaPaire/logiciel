@@ -2,42 +2,51 @@
   "name": "atp_electron",
   "version": "1.0.0",
   "description": "App for AdopteTaPaire",
+  "keywords": [],
+  "author": "AdopteTaPaire",
+  "license": "ISC",
+  "repository": "https://github.com/AdopteTaPaire/logiciel",
   "main": "dist/electron.js",
   "scripts": {
-    "build": "tsc",
+    "postinstall": "electron-builder install-app-deps",
+    "build": "rm -rf ./dist && tsc",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && electron .",
-    "dist": "npm run build && electron-builder"
+    "deploy": "rm -rf ./build && npm run build && electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@types/lodash": "^4.14.182",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
-    "axios": "^0.26.1",
-    "dotenv": "^16.0.0",
     "electron": "^18.0.4",
+    "copyfiles": "^2.4.1",
     "electron-builder": "^23.0.3",
     "eslint": "^8.13.0",
-    "lodash": "^4.17.21",
-    "puppeteer-core": "^13.5.2",
     "typescript": "^4.6.3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "axios": "^0.26.1",
+    "dotenv": "^16.0.0",
+    "lodash": "^4.17.21",
+    "puppeteer-core": "^13.5.2"
+  },
   "build": {
-    "generateUpdatesFilesForAllChannels": true,
     "appId": "fr.atp.app",
     "files": [
+      "public/**/*",
       "dist/**/*",
       "package.json"
     ],
     "directories": {
       "output": "build"
     },
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
     "win": {
-      "icon": "assets/images/icon.ico",
+      "icon": "public/icons/win/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -50,7 +59,7 @@
       ]
     },
     "mac": {
-      "icon": "assets/images/icon.icns",
+      "icon": "public/icons/mac/icon.icns",
       "target": [
         "zip",
         "dmg"
@@ -64,7 +73,7 @@
         "zip"
       ],
       "category": "Utility",
-      "icon": "assets/images/linux-icon.png"
+      "icon": "public/icons/png/16x16.png"
     }
   }
 }
