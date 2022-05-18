@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "App for AdopteTaPaire",
   "keywords": [],
-  "author": "AdopteTaPaire",
+  "author": "AdopteTaPaire <commandes@adoptetapaire.fr>",
   "license": "ISC",
   "repository": "https://github.com/AdopteTaPaire/logiciel",
   "main": "dist/electron.js",
