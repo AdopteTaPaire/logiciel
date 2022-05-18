@@ -147,7 +147,7 @@ export default class Browser {
 				...action.args,
 				...productCompute(action.product),
 			});
-			if (!did) return; // avoid the action to rerun if it failed
+			if (!did) return; // avoid the action to rerun if it failed, we just don't set the action.running to false
 			action.running = false;
 		} catch (e) {
 			console.log("Error running action: ", e);
@@ -207,6 +207,8 @@ export default class Browser {
 		args?: { [key: string]: string },
 		page?: puppeteer.Page
 	): Promise<puppeteer.Page | void> {
+		console.log("Running script: ", siteName, scriptName);
+
 		const script = await Browser.getScript(siteName, scriptName);
 		if (!script) return null;
 		return await script.run(args, page);

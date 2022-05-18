@@ -7,7 +7,10 @@ import Script from "./Script";
 import { parse as stringParse } from "./utils/string";
 
 export interface IAction {
-	type: "click" | "input" | "wait" | "human" | "upload";
+	type: "click" | "input" | "wait" | "human" | "upload" | "return" | "for";
+	if?: { this: string; eq: string }[];
+	then?: IAction["selector"] | IAction["selectors"];
+	else?: IAction["then"];
 	validation?: {
 		type: "iframe" | "input";
 		value: string | boolean;
@@ -19,6 +22,7 @@ export interface IAction {
 	text?: string;
 	continue?: boolean;
 	relaunch?: boolean;
+	for: IAction[];
 }
 
 export default class Action {
@@ -40,25 +44,55 @@ export default class Action {
 			: this.action.value ?? "";
 	}
 
-	private async getSelector(value: string | number = "") {
+	private async getSelector(
+		value: string | number = "",
+		args: { [key: string]: string }
+	) {
+		let selectors = this.action.selectors;
 		let selector = this.action.selector;
 
-		if (value && typeof value == "string" && this.action.selectors) {
+		if (this.action.if) {
+			// if we have an if condition, we need to check if the value is equal to the condition
+			let passed = true; // default to true, if the condition is false, we will set it to false
+			for (const { this: toCheck, eq } of this.action.if) {
+				const toCheckParsed = stringParse(toCheck, args);
+				let eqPassed = false;
+				for (const eqArg of eq.split("|")) {
+					// we can have multiple values to check, separated by |
+					// exemple: if: [{this: "myValue", eq: "myValue|myOtherValue"}] -> return true if (myValue == "myValue" || myValue == "myOtherValue")
+					if (toCheckParsed.indexOf(eqArg.trim()) !== -1) {
+						eqPassed = true;
+					}
+				}
+				if (!eqPassed) passed = false;
+			}
+
+			// if the condition is false and there is no else, then return
+			if (!passed && !this.action.else) return this.action.continue ? 0 : -1;
+			const selec = passed ? this.action.then : this.action.else;
+			if (typeof selec == "string") {
+				selector = selec;
+			} else {
+				selectors = selec;
+			}
+		}
+
+		if (value && typeof value == "string" && selectors) {
 			// if the action value & an array of selector is set, means we have multiple selector to choose based on the value
-			for (const [selecName, selec] of Object.entries(this.action.selectors)) {
+			for (const [selecName, selec] of Object.entries(selectors)) {
 				// the key is the name of the selector, we need to see if the value contains the key
 				if (value.indexOf(selecName) !== -1) {
 					selector = selec;
 				}
 			}
 
-			if (selector == this.action.selector) {
+			if (!selector) {
 				// if we didn't find a selector, we use the default one
-				selector = this.action.selectors.default;
+				selector = selectors.default;
 			}
 		}
 
-		return selector;
+		return stringParse(selector ?? "", args);
 	}
 
 	private async doValidation(
@@ -130,7 +164,12 @@ export default class Action {
 
 	public async run(args: { [key: string]: string }, page: puppeteer.Page) {
 		const value = this.getValue(args);
-		const selector = await this.getSelector(value);
+		const selector = await this.getSelector(value, args);
+		if (typeof selector != "string") {
+			// if selector is a number means we didn't find it, so we return it as it is the continue or return
+			console.log("No selector for action");
+			return selector;
+		}
 
 		console.log("Running action", this.action.type, selector ?? value);
 
@@ -167,36 +206,56 @@ export default class Action {
 					console.log("doesnt exists, downloading");
 					// remove the file name from the path
 					const dirPath = imgPath.replace(path.basename(imgPath), "");
-					console.log(dirPath);
-
 					fs.mkdirSync(dirPath, { recursive: true });
 
-					const res = await axios({
-						method: "GET",
-						responseType: "stream",
-						url: `${process.env.APP_URL}${endpoint}`,
-					});
-					if (res.status < 200 || res.status >= 400) {
-						// if we didn't get a good response, we continue to the next action
+					try {
+						const res = await axios({
+							method: "GET",
+							responseType: "stream",
+							url: `${process.env.APP_URL}${endpoint}`,
+						});
+						console.log("creating file stream");
+						const file = fs.createWriteStream(imgPath);
+						res.data.pipe(file);
+
+						// create a new promise to wait untill the file is downloaded
+						const p = new Promise<void>((resolve) =>
+							file.on("finish", () => {
+								file.close();
+								console.log("File downloaded");
+								resolve();
+							})
+						);
+						await p;
+					} catch (e) {
+						// Means the request failed, so we just continue to the next action
+						console.log("Failed to download image");
 						return 0;
 					}
-					console.log("creating file stream");
-					const file = fs.createWriteStream(imgPath);
-					res.data.pipe(file);
-
-					// create a new promise to wait untill the file is downloaded
-					const p = new Promise<void>((resolve) =>
-						file.on("finish", () => {
-							file.close();
-							console.log("File downloaded");
-							resolve();
-						})
-					);
-					await p;
 				}
 
 				const elem = await page.$(selector);
 				await elem.uploadFile(imgPath);
+
+				break;
+			}
+			case "return": {
+				// TODO: implement
+				break;
+			}
+			case "for": {
+				let i = value as number;
+				if (!i) {
+					const element = await page.$(selector);
+					i = (await (
+						await element.getProperty("childElementCount")
+					).jsonValue()) as number;
+				}
+
+				for (let j = 0; j < i; j++) {
+					const newAction = new Action(this.script, this.action.for[j]);
+					await newAction.run(args, page);
+				}
 
 				break;
 			}

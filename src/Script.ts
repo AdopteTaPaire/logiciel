@@ -64,9 +64,8 @@ export default class Script {
 			for (const arg in this.script.args) {
 				if (args[arg]) continue;
 
-				if (this.script.args[arg] == "") {
-					throw new Error("Missing argument: " + arg);
-				}
+				if (!this.script.args[arg])
+					throw new Error('Veuillez définir le paramètre "' + arg + '"');
 
 				args[arg] = this.script.args[arg];
 			}
@@ -84,7 +83,8 @@ export default class Script {
 				? this.script.page
 				: `${this.site.url}/${this.script.page}`;
 		// Check if we're already on the page
-		if (page.url().indexOf(newUrl) == -1) await page.goto(newUrl);
+		if (page.url().indexOf(newUrl) == -1)
+			await page.goto(newUrl, { waitUntil: "networkidle2" });
 
 		return page;
 	}
@@ -175,6 +175,6 @@ export default class Script {
 			}
 		}
 
-		return this.script.debug ? null : page;
+		return this.script.debug ? null : page; // don't make the script finish if debug is on
 	}
 }
