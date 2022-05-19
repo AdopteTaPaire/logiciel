@@ -20,6 +20,10 @@ export default class Parameter {
 			"parameters.json"
 		);
 
+		Parameter.defaultParams.app_url = Main.isPackaged()
+			? "https://atp.pj-lefort.com/"
+			: "http://localhost:3001/";
+
 		try {
 			if (fs.existsSync(Parameter.paramsPath)) {
 				const parametersJson = fs.readFileSync(Parameter.paramsPath);

@@ -99,21 +99,23 @@ export default class Browser {
 
 		try {
 			const page = await Browser.browser.newPage();
-			const response = await page.goto(`${process.env.APP_URL}/api${endpoint}`);
+			const response = await page.goto(
+				`${Parameter.get("app_url")}/api${endpoint}`
+			);
 			const content = await page.evaluate(() => document.body.innerText);
 			const status = response.status();
 			if (status == 401) {
 				// login user if needed
 				console.log("Login user...");
 
-				await page.goto(`${process.env.APP_URL}/login`);
+				await page.goto(`${Parameter.get("app_url")}/login`);
 				await page.type("#username", Parameter.get("app_username"));
 				await page.type("#password", Parameter.get("app_password"));
 				await page.click("#se-connecter");
 				await page.waitForNavigation();
 				const url = page.url();
 				await page.close();
-				if (url == `${process.env.APP_URL}/login`) {
+				if (url == `${Parameter.get("app_url")}/login`) {
 					throw new Error("Login failed.");
 				}
 				return await Browser.fetchApi(endpoint);
@@ -300,7 +302,7 @@ export default class Browser {
 
 			fs.mkdirSync(dirPath, { recursive: true });
 
-			// http.get(`${process.env.APP_URL}${endpoint}`, (res) => {
+			// http.get(`${Parameter.get("app_url")}${endpoint}`, (res) => {
 			// 	console.log("creating file stream");
 			// 	const file = fs.createWriteStream(imgPath);
 			// 	res.pipe(file);

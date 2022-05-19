@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "axios": "^0.26.1",
-    "dotenv": "^16.0.0",
     "electron-log": "^4.4.7",
     "electron-updater": "^5.0.1",
     "lodash": "^4.17.21",

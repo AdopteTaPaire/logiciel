@@ -30,8 +30,12 @@ export default class Main {
 	static getRessourcesPath() {
 		return path.resolve(
 			Main.getPath(),
-			Main.application.isPackaged ? "../" : "resources"
+			Main.isPackaged() ? "../" : "resources"
 		);
+	}
+
+	static isPackaged() {
+		return Main.application.isPackaged;
 	}
 
 	private static onWindowAllClosed() {

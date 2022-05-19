@@ -4,6 +4,4 @@ build
 
 resources/
 
-.env
-
 gh_token.txt

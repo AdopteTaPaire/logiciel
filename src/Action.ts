@@ -6,6 +6,7 @@ import Main from "./Main";
 import Browser from "./Browser";
 import Script from "./Script";
 import { parse as stringParse } from "./utils/string";
+import Parameter from "./Parameter";
 
 export interface IAction {
 	type: "click" | "input" | "wait" | "human" | "upload" | "return" | "for";
@@ -215,7 +216,7 @@ export default class Action {
 						const res = await axios({
 							method: "GET",
 							responseType: "stream",
-							url: `${process.env.APP_URL}${endpoint}`,
+							url: `${Parameter.get("app_url")}${endpoint}`,
 						});
 						console.log("creating file stream");
 						const file = fs.createWriteStream(imgPath);
