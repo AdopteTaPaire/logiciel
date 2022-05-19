@@ -96,7 +96,7 @@ export default class Main {
 	}
 
 	private static onReady() {
-		autoUpdater.checkForUpdatesAndNotify();
+		autoUpdater.checkForUpdates();
 
 		if (!Main.tray) Main.createTray();
 		if (Main.mainWindow) Main.mainWindow.close();
