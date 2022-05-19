@@ -89,7 +89,6 @@ export default class Browser {
 	}
 
 	private static async getChromeDataPath() {
-		// return `${os.homedir()}\\AppData\\Local\\Google\\Chrome\\User Data`;
 		return path.join(Main.getRessourcesPath(), "chrome");
 	}
 
