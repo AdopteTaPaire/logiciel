@@ -23,6 +23,14 @@ export default class Main {
 	private static ipcInitied: boolean;
 	private static continueCallback: () => void;
 
+	static getPath() {
+		return Main.application.getAppPath();
+	}
+
+	static getRessourcesPath() {
+		return path.resolve(Main.getPath(), "resources");
+	}
+
 	private static onWindowAllClosed() {
 		// just hide the window, do not quit the app.
 		if (process.platform == "darwin") Main.application.dock.hide();
@@ -89,6 +97,7 @@ export default class Main {
 
 		Main.initIpc();
 		updateApp();
+		console.log(Main.getRessourcesPath());
 	}
 
 	private static createTray() {

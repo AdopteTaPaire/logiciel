@@ -2,11 +2,8 @@ node_modules
 dist
 build
 
-parameters.json
+resources/
 
-chrome
 .env
-
-public/images/
 
 gh_token.txt

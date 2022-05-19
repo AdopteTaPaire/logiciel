@@ -88,9 +88,9 @@ export default class Browser {
 		return siteData ? siteData.scripts[script] : null;
 	}
 
-	private static async getChromePath() {
+	private static async getChromeDataPath() {
 		// return `${os.homedir()}\\AppData\\Local\\Google\\Chrome\\User Data`;
-		return path.join(__dirname, "../chrome/data");
+		return path.join(Main.getRessourcesPath(), "chrome");
 	}
 
 	private static async fetchApi(endpoint: string): Promise<any | null> {
@@ -245,10 +245,10 @@ export default class Browser {
 	private static async launchProcess() {
 		// make a new process to avoid all puppeteer paramaters. Usefull for bypassing bot detection
 		Browser.process = child_process.spawn(
-			"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+			Parameter.get("chrome_path"),
 			[
 				"--remote-debugging-port=9222",
-				`--user-data-dir=${await Browser.getChromePath()}`,
+				`--user-data-dir=${await Browser.getChromeDataPath()}`,
 			],
 			{
 				detached: false,
@@ -289,7 +289,7 @@ export default class Browser {
 		await page.goto("file:///C:/Users/pj841/Documents/STAGE/upload_test.html");
 
 		const endpoint = value.toString();
-		const imgPath = path.resolve(__dirname, "../public" + endpoint);
+		const imgPath = path.resolve(Main.getRessourcesPath(), endpoint);
 
 		// if we don't have the image in our files, download it from the api
 		if (!fs.existsSync(imgPath)) {

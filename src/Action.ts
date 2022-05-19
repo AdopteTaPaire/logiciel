@@ -2,6 +2,7 @@ import * as puppeteer from "puppeteer-core";
 import axios from "axios";
 import * as path from "path";
 import * as fs from "fs";
+import Main from "./Main";
 import Browser from "./Browser";
 import Script from "./Script";
 import { parse as stringParse } from "./utils/string";
@@ -201,7 +202,7 @@ export default class Action {
 				break;
 			case "upload": {
 				const endpoint = value.toString();
-				const imgPath = path.resolve(__dirname, "../public" + endpoint);
+				const imgPath = path.resolve(Main.getRessourcesPath(), endpoint);
 
 				// if we don't have the image in our files, download it from the api
 				if (!fs.existsSync(imgPath)) {
