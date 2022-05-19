@@ -8,3 +8,5 @@ chrome
 .env
 
 public/images/
+
+gh_token.txt
