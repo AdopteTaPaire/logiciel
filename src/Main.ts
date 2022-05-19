@@ -8,12 +8,11 @@ import {
 	Notification,
 } from "electron";
 import log from "electron-log";
-import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import Parameter from "./Parameter";
 import Browser from "./Browser";
+import updateApp from "./updater";
 
-autoUpdater.logger = log;
 Object.assign(console, log.functions);
 
 export default class Main {
@@ -23,36 +22,6 @@ export default class Main {
 	private static tray: Tray;
 	private static ipcInitied: boolean;
 	private static continueCallback: () => void;
-
-	private static autoUpdaterEvents() {
-		autoUpdater.on("checking-for-update", () => {
-			console.log("Checking for update...");
-		});
-		autoUpdater.on("update-available", (info) => {
-			console.log("Update available.", info);
-		});
-		autoUpdater.on("update-not-available", (info) => {
-			console.log("Update not available.", info);
-		});
-		autoUpdater.on("error", (err) => {
-			console.log("Error in auto-updater. " + err);
-		});
-		autoUpdater.on("download-progress", (progressObj) => {
-			let log_message = "Download speed: " + progressObj.bytesPerSecond;
-			log_message = log_message + " - Downloaded " + progressObj.percent + "%";
-			log_message =
-				log_message +
-				" (" +
-				progressObj.transferred +
-				"/" +
-				progressObj.total +
-				")";
-			console.log(log_message);
-		});
-		autoUpdater.on("update-downloaded", (info) => {
-			console.log("Update downloaded", info);
-		});
-	}
 
 	private static onWindowAllClosed() {
 		// just hide the window, do not quit the app.
@@ -96,7 +65,6 @@ export default class Main {
 	}
 
 	private static onReady() {
-		autoUpdater.checkForUpdates();
 		if (!Main.tray) Main.createTray();
 		if (Main.mainWindow) Main.mainWindow.close();
 
@@ -120,6 +88,7 @@ export default class Main {
 		});
 
 		Main.initIpc();
+		updateApp();
 	}
 
 	private static createTray() {
@@ -167,7 +136,6 @@ export default class Main {
 		// makes the code easier to write tests for
 		Main.BrowserWindow = browserWindow;
 		Main.application = app;
-		Main.autoUpdaterEvents();
 		Main.application.on("window-all-closed", Main.onWindowAllClosed);
 		Main.application.on("ready", Main.onReady);
 	}
