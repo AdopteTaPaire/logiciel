@@ -12,8 +12,7 @@
     "postinstall": "electron-builder install-app-deps",
     "build": "rm -rf ./dist && tsc",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
-    "start": "npm run build && electron .",
-    "deploy": "rm -rf ./build && npm run build && electron-builder"
+    "start": "npm run build && electron ."
   },
   "devDependencies": {
     "@types/lodash": "^4.14.182",
