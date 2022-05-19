@@ -16,6 +16,7 @@ const params: { [key: string]: string } = {
 	lbc_password: "",
 	app_username: "",
 	app_password: "",
+	app_url: "",
 	chrome_path: "",
 };
 
