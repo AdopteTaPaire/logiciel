@@ -23,6 +23,8 @@ window.addEventListener("DOMContentLoaded", () => {
 	const menuButton = document.getElementById("menu");
 	const navPanel = document.getElementsByClassName("nav-panel")[0];
 
+	console.log("a new version updated");
+
 	if (menuButton && navPanel)
 		menuButton.addEventListener("click", () => {
 			navPanel.classList.toggle("close");
