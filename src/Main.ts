@@ -81,7 +81,10 @@ export default class Main {
 
 	private static onReady() {
 		if (!Main.tray) Main.createTray();
-		if (Main.mainWindow) Main.mainWindow.close();
+
+		// close the window if it's not destroyed.
+		if (Main.mainWindow && !Main.mainWindow.isDestroyed())
+			Main.mainWindow.close();
 
 		Main.mainWindow = new Main.BrowserWindow({
 			width: 500,
@@ -104,7 +107,6 @@ export default class Main {
 
 		Main.initIpc();
 		updateApp();
-		console.log(Main.getRessourcesPath());
 	}
 
 	private static createTray() {
