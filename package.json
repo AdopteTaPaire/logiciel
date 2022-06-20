@@ -1,6 +1,6 @@
 {
   "name": "atp_electron",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "App for AdopteTaPaire",
   "keywords": [],
   "author": "AdopteTaPaire <commandes@adoptetapaire.fr>",
@@ -33,6 +33,7 @@
   },
   "build": {
     "appId": "fr.atp.app",
+    "productName": "Adopte Ta Paire",
     "files": [
       "public/**/*",
       "dist/**/*",
