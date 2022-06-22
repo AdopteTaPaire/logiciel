@@ -21,7 +21,7 @@ export default class Parameter {
 		);
 
 		Parameter.defaultParams.app_url = Main.isPackaged()
-			? "https://atp.pj-lefort.com/"
+			? "https://panel.adoptetapaire.fr/"
 			: "http://localhost:3001/";
 
 		try {
