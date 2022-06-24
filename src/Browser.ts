@@ -132,35 +132,57 @@ export default class Browser {
 		}
 	}
 
+	private static findActionToRun() {
+		if (Browser.actions.length == 0) return null;
+		let action = Browser.actions[0];
+		let i = 1;
+		while (!action || action.running || action.state != 0) {
+			if (i == Browser.actions.length) return null;
+			action = Browser.actions[i];
+			i++;
+		}
+
+		return action;
+	}
+
 	private static async runActions(): Promise<void> {
 		console.log("Running actions...");
 		if (Browser.actions.length == 0)
 			return console.log("No more action to run...");
 
-		const action = Browser.actions[0]; // get the first action
-		if (action.state != 0) return;
-		if (action.running) return; // if this action is running, we wait. Don't like to execute multiple actions at the same time, for the moment => to test
+		const action = Browser.findActionToRun();
+		if (!action) return console.log("No action to run...");
 
 		action.running = true;
+
+		const actionHandler = async (
+			action: typeof Browser.actions[0],
+			state: number
+		) => {
+			action.state = state;
+
+			const apiResponse = await Browser.fetchApi(
+				`/actions/update?id=${action._id}&state=${state}`
+			);
+			console.log(apiResponse);
+			return apiResponse;
+		};
+
 		try {
 			const did = await Browser.runScript(action.site, action.script, {
 				...Parameter.getAll(),
 				...action.args,
 				...productCompute(action.product),
 			});
-			if (!did) return; // avoid the action to rerun if it failed, we just don't set the action.running to false
-			action.running = false;
+			if (!did) throw new Error("Action did not finished !");
 		} catch (e) {
 			console.log("Error running action: ", e);
 			Main.sendError("Error running action: " + (e as Error).message);
-			action.running = false;
-			return;
+			return await actionHandler(action, -1);
 		}
 
 		console.log("Action done: ", action.site, action.script);
-		action.state = 1;
-		Browser.actions.shift();
-		await Browser.fetchApi(`/actions/update?id=${action._id}&state=1`);
+		return await actionHandler(action, 1);
 	}
 
 	private static initIntervals() {
@@ -325,6 +347,7 @@ export default class Browser {
 			Browser.process.kill();
 		}
 
+		Browser.actions = [];
 		await Browser.launchProcess();
 
 		// wait for the browser to be ready
