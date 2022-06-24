@@ -161,6 +161,8 @@ export default class Browser {
 			state: number
 		) => {
 			action.state = state;
+			action.running = false;
+			Browser.actions = Browser.actions.filter((a) => a._id != action._id);
 
 			const apiResponse = await Browser.fetchApi(
 				`/actions/update?id=${action._id}&state=${state}`
