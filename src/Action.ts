@@ -81,10 +81,11 @@ export default class Action {
 
 		if (value && typeof value == "string" && selectors) {
 			// if the action value & an array of selector is set, means we have multiple selector to choose based on the value
-			for (const [selecName, selec] of Object.entries(selectors)) {
+			for (const selecName in selectors) {
 				// the key is the name of the selector, we need to see if the value contains the key
 				if (value.indexOf(selecName) !== -1) {
-					selector = selec;
+					selector = selectors[selecName];
+					break;
 				}
 			}
 
