@@ -134,9 +134,10 @@ export default class Browser {
 
 	private static findActionToRun() {
 		if (Browser.actions.length == 0) return null;
+		if (Browser.actions.find((a) => a.running)) return null; // we don't want two actions to run a the same time
 		let action = Browser.actions[0];
 		let i = 1;
-		while (!action || action.running || action.state != 0) {
+		while (!action || action.state != 0) {
 			if (i == Browser.actions.length) return null;
 			action = Browser.actions[i];
 			i++;

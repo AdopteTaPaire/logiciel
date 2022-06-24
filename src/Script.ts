@@ -113,7 +113,7 @@ export default class Script {
 		args: { [key: string]: string },
 		page: puppeteer.Page
 	) {
-		if (!this.script.condition) return;
+		if (!this.script.condition) return true;
 
 		// if the selector is found and condition = notexists, run the else script and then re-run the actual script
 		console.log("Checking script condition");
@@ -137,7 +137,12 @@ export default class Script {
 				);
 			}
 
-			return Browser.runScript(this.siteName, this.scriptName, args, page);
+			return await Browser.runScript(
+				this.siteName,
+				this.scriptName,
+				args,
+				page
+			);
 		};
 
 		try {
@@ -154,11 +159,15 @@ export default class Script {
 
 				return onNotFullfilled(this.script.condition.else);
 			}
+
+			return true;
 		} catch (e) {
 			// selector doesnt exists
 			if (this.script.condition.type !== "notexists") {
 				return onNotFullfilled(this.script.condition.else);
 			}
+
+			return true;
 		}
 	}
 
@@ -167,7 +176,8 @@ export default class Script {
 		page = await this.gotoPage(page);
 
 		await this.acceptCookies(page);
-		await this.checkCondition(args, page);
+		const res = await this.checkCondition(args, page); // the condition will rerun the script if necessary, so we return what the rerun returned
+		if (res != true) return res;
 
 		for (const action of this.actions) {
 			const returnCode = await action.run(args, page);
